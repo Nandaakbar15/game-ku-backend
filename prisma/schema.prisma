@@ -1,0 +1,102 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  seller
+  buyer
+  admin
+}
+
+enum ListingType {
+    buy_now
+    auction
+}
+
+enum Status {
+    active
+    sold
+    ended
+    cancelled
+}
+
+enum Condition {
+    mint
+    good
+    fair
+    refurbished
+    parts_only
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  username  String   @db.VarChar(155)
+  email     String   @unique @db.VarChar(155)
+  password  String   @db.VarChar(155)
+  role      Role     @default(seller)
+
+  products  Products[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Categories {
+    id   Int    @id @default(autoincrement())
+    name String @db.VarChar(50)
+    slug String @db.VarChar(50)
+
+    parent_id Int?
+    parent    Categories?  @relation("CategoryTree", fields: [parent_id], references: [id])
+    children  Categories[] @relation("CategoryTree")
+
+    products  Products[]
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+}
+
+
+model Products {
+    id Int @id @default(autoincrement())
+
+    seller_id Int
+    seller    User       @relation(fields: [seller_id], references: [id])
+
+    category_id Int
+    category    Categories @relation(fields: [category_id], references: [id])
+
+    title        String    @db.VarChar(150)
+    description  String    @db.Text
+    condition    Condition   @default(good)
+    listing_type ListingType @default(buy_now)
+    status       Status      @default(active)
+
+    images ProductImages[]
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+}
+
+model ProductImages {
+    id Int @id @default(autoincrement())
+
+    product_id Int
+    product Products @relation(fields: [product_id], references: [id])
+
+    image_url String @db.VarChar(255)
+
+    is_primary Boolean @default(false)
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+}
